@@ -8,6 +8,12 @@ const sass = require('gulp-sass')(require('sass'));
 const browserSync = require('browser-sync').create();
 const nunjucksRender = require('gulp-nunjucks-render');
 const autoprefixer = require('gulp-autoprefixer');
+const del = require('del');
+
+function cleanFiles(cb) {
+	del.sync(['dist']);
+	cb();
+}
 
 function nunjucks(cb) {
 	gulp.src('src/pages/*.html')
@@ -117,6 +123,18 @@ function watch_files() {
 	gulp.watch('src/assets/images/*.{png,jpg,jpeg,gif,svg}', copyImgs).on('change', browserSync.reload);
 }
 
-exports.default = series(nunjucks, copyJS, copyJSMap, copyCSS, copyCSSMap, copySCSS, copyFonts, copyImgs, watch_files);
-exports.build = parallel(nunjucks, copyJS, copyJSMap, copyCSS, copyCSSMap, copySCSS, copyFonts,copyImgs, minifyNunjucks, minifyJS, minifyCSS);
-exports.minifyImgs = series(copyImgs, minifyImgs);
+exports.default = series(
+	cleanFiles,
+	series(nunjucks, copyJS, copyJSMap, copyCSS, copyCSSMap, copySCSS, copyFonts, copyImgs, watch_files)
+);
+
+exports.build = series(
+	cleanFiles,
+	parallel(nunjucks, copyJS, copyJSMap, copyCSS, copyCSSMap, copySCSS, copyFonts, copyImgs),
+	parallel(minifyNunjucks, minifyJS, minifyCSS)
+);
+
+exports.minifyImgs = series(
+	copyImgs,
+	minifyImgs
+);
